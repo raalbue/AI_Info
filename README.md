@@ -150,3 +150,123 @@ irm [https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1](h
 if that doesnt work, install node.js  
  winget install OpenJS.NodeJS.LTS
 >>>>>>> 04dec4208b2da26642482fea1e09803e67e852f5
+
+
+
+opencode config for powershell/windows is in 
+\Users\raalb\.config\opencode\opencode.jsonc
+
+AAAI local 
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local LLM",
+      "options": {
+        "baseURL": "https://aaai.hippocampus-boa.ts.net/v1",
+        "apiKey": "none"
+      },
+      "models": {
+        "qwen3.8:27b": {
+          "name": "Local Qwen 3.8 27B"
+        }
+      }
+    }
+  },
+  "model": "ollama/qwen3.8:27b"
+}
+
+
+linux fix for opencode mouse stuff
+
+/mnt/c/Users/raalb/.local/bin is first in $PATH, ahead of the npm dir — and PATH here comes from WSL's Windows-interop inheritance, not from .bashrc, so it applies in every shell type (login, non-login, ssh remote-cmd, tmux, all of it). This is the real fix — beats editing bashrc entirely.
+
+mkdir -p ~/.local/bin   # = /mnt/c/Users/raalb/.local/bin, same dir seen twice in PATH
+cp ~/opencode-wrapper.sh /mnt/c/Users/raalb/.local/bin/opencode
+chmod +x /mnt/c/Users/raalb/.local/bin/opencode
+
+Edit that copy's last line: opencode "$@" → full path to real binary:
+
+/mnt/c/Users/raalb/AppData/Roaming/npm/opencode "$@"
+
+(use full path here, not bare opencode — avoid self-recursion since PATH now resolves opencode to this same wrapper first).
+
+Then drop the bashrc function — no longer needed, PATH does the work unconditionally. Verify:
+
+hash -r
+which opencode   # should now show /mnt/c/Users/raalb/.local/bin/opencode
+
+
+adding LMStudio
+
+"provider": {
+  "ollama": { /* existing */ },
+  "lmstudio": {
+    "npm": "@ai-sdk/openai-compatible",
+    "name": "LM Studio",
+    "options": {
+      "baseURL": "http://localhost:1234/v1",
+      "apiKey": "lm-studio"
+    },
+    "models": {
+      "qwen2.5-coder-32b": { "name": "Qwen 2.5 Coder 32B" }
+    }
+  }
+}
+
+
+
+❯ what does it mean to run wsl thru a windows terminal and I assume windows terminal is not powershell
+
+Right, different things:
+
+- PowerShell = a shell (runs commands), like bash.
+- conhost.exe = old Windows terminal emulator (the window/font/renderer) that currently hosts your wsl.exe session. This is what's buggy.
+- Windows Terminal (wt.exe) = new terminal emulator app, replaces conhost as the window/renderer. It can host any shell inside — PowerShell, cmd, or WSL — each as its own tab/profile, all running through modern ConPTY.
+
+So "run WSL through Windows Terminal" = same WSL/Ubuntu/bash, same wrapper script, same everything — just displayed in a better emulator instead of conhost. Not a shell change, a window/renderer change.
+
+Get it:
+winget install Microsoft.WindowsTerminal
+Open Windows Terminal, dropdown arrow next to the + tab → pick your WSL distro (Ubuntu, etc). That tab is a normal WSL session — run opencode there, mouse-mode disable codes should work correctly since ConPTY handles VT properly.
+
+final config
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local LLM",
+      "options": {
+        "baseURL": "https://aaai.hippocampus-boa.ts.net/v1",
+        "apiKey": "none"
+      },
+      "models": {
+        "qwen3.8:27b": {
+          "name": "aaai Qwen 3.8 27B"
+        }
+      }
+    },
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LM Studio",
+      "options": {
+        "baseURL": "http://localhost:1234/v1",
+        "apiKey": "lm-studio"
+      },
+      "models": {
+        "qwen/qwen2.5-coder-14b": { "name": "lms Qwen 2.5 Coder 14B" },
+        "google/gemma-4-e4b": { "name": "lms Gemma4 4B" }
+      }
+    },
+  },
+  "model": "ollama/qwen3.8:27b",
+  "mcp": {
+    "sequential-thinking": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": true
+    }
+  }
+}

@@ -128,12 +128,12 @@ You can then ask Claude to speak responses aloud.
 Uses Microsoft Edge's neural TTS service — much more natural than the legacy Windows SAPI voices (`David`/`Zira`/`Mark`) that `windows-tts-mcp` and `System.Speech` are stuck with. Zero API key.
 
 > **Watch out — two different packages share the "edge tts mcp" name:**
->
-> | Package | PyPI name | Behavior |
-> |---|---|---|
-> | by `eraincc` | `edge-tts-mcp` | Only **writes an MP3 file** and returns its path (`tts` tool) — does **not** play audio. Needs a separate playback step. |
-> | by `s-n-n` | `mcp-edge-tts` | Has a `speak` tool that **plays audio directly** (PowerShell MediaPlayer on Windows) — drop-in equivalent to `windows-tts-mcp`'s `speak_text`. |
->
+> 
+> | Package      | PyPI name      | Behavior                                                                                                                                       |
+> | ------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+> | by `eraincc` | `edge-tts-mcp` | Only **writes an MP3 file** and returns its path (`tts` tool) — does **not** play audio. Needs a separate playback step.                       |
+> | by `s-n-n`   | `mcp-edge-tts` | Has a `speak` tool that **plays audio directly** (PowerShell MediaPlayer on Windows) — drop-in equivalent to `windows-tts-mcp`'s `speak_text`. |
+> 
 > Use **`mcp-edge-tts`** (the second one) unless you specifically want files on disk instead of audio.
 
 **Install:**
@@ -143,9 +143,11 @@ pip install mcp-edge-tts
 ```
 
 **Known bug (as of `mcp-edge-tts` 0.1.1, August 2026):** it depends on `mcp>=1.0.0` with no upper bound, but the `mcp` SDK hit a breaking `2.0.0` release that removed `mcp.server.fastmcp.FastMCP` (moved/renamed). Installing normally resolves the latest `mcp` and the server crashes with:
+
 ```
 ModuleNotFoundError: No module named 'mcp.server.fastmcp'
 ```
+
 **Fix:** pin `mcp<2.0.0` when launching it. Via `uvx`, use `--with`:
 
 **Configure** (`~/.claude/settings.json`):
@@ -162,7 +164,6 @@ ModuleNotFoundError: No module named 'mcp.server.fastmcp'
 ```
 
 > **Status on this machine:** configured (2026-08-20), registered alongside `windows-tts` in the same `mcpServers` block. Exposes tools `speak`, `list_available_voices`, and `get_config`. Good starting voices: `en-US-AvaNeural` (warm, natural), `en-US-AndrewNeural` (male, natural) — pass as the `voice` parameter, e.g. `speak("hello", voice="en-US-AvaNeural")`. Requires a Claude Code restart (or new session) to pick up, since MCP servers register at startup — see the reload caveat at the end of §4.
->
 > If it still fails to start after a restart, re-run the failing command by hand to see the real error:
 > ```powershell
 > uvx --with "mcp<2.0.0" mcp-edge-tts
@@ -173,12 +174,15 @@ Requires internet connection (the neural voices are synthesized by Microsoft's c
 ### Setting the voice
 
 **Per-request (no config change):** pass `voice` as an argument when asking Claude to speak, or directly to the tool:
+
 ```
 speak("Hello, world!", voice="en-US-AvaNeural")
 ```
+
 If omitted, it falls back to the configured default (`en-US-AriaNeural` unless overridden — see below), or `EDGE_TTS_VOICE` if set.
 
 **Set a default for every call**, so you don't have to name a voice each time — add an `env` block to the `edge-tts` entry in `~/.claude/settings.json`:
+
 ```json
 {
   "mcpServers": {
@@ -195,6 +199,7 @@ If omitted, it falls back to the configured default (`en-US-AriaNeural` unless o
   }
 }
 ```
+
 `rate`/`volume`/`pitch` accept a signed percentage (`+20%`, `-10%`) except `pitch`, which is in Hz (`+5Hz`). Restart Claude Code after editing `env` — MCP server config, including env vars, is only read at startup.
 
 Ask `get_config` (one of the server's tools) to see the currently active defaults and detected audio player.
@@ -204,133 +209,131 @@ Ask `get_config` (one of the server's tools) to see the currently active default
 **Ask Claude** — call the `list_available_voices` tool, optionally filtered by language: `list_available_voices("uk")` for just Ukrainian voices, or with no argument for the full list.
 
 **Or list them yourself**, without going through Claude at all, since `edge-tts` (the underlying Python package, already installed as `mcp-edge-tts`'s dependency) ships a CLI:
+
 ```powershell
 edge-tts --list-voices
 ```
 
 Edge TTS has 322 voices total across 142 locales; only the English ones are listed below (47 voices, 14 English locales) since that's what's relevant here. Run `edge-tts --list-voices` yourself for the full multilingual list. Pick the `Voice` value and pass it as the `voice` parameter or `EDGE_TTS_VOICE` env var.
 
-<details>
-<summary>Click to expand all 47 English voices, grouped by locale</summary>
+Click to expand all 47 English voices, grouped by locale
 
 **en-AU - English (Australia)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-AU-NatashaNeural` | Female | Friendly, Positive |
-| `en-AU-WilliamMultilingualNeural` | Male | Friendly, Positive |
+| Voice                             | Gender | Personality        |
+| --------------------------------- | ------ | ------------------ |
+| `en-AU-NatashaNeural`             | Female | Friendly, Positive |
+| `en-AU-WilliamMultilingualNeural` | Male   | Friendly, Positive |
 
 **en-CA - English (Canada)**
 
-| Voice | Gender | Personality |
-|---|---|---|
+| Voice               | Gender | Personality        |
+| ------------------- | ------ | ------------------ |
 | `en-CA-ClaraNeural` | Female | Friendly, Positive |
-| `en-CA-LiamNeural` | Male | Friendly, Positive |
+| `en-CA-LiamNeural`  | Male   | Friendly, Positive |
 
 **en-GB - English (United Kingdom)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-GB-LibbyNeural` | Female | Friendly, Positive |
+| Voice                | Gender | Personality        |
+| -------------------- | ------ | ------------------ |
+| `en-GB-LibbyNeural`  | Female | Friendly, Positive |
 | `en-GB-MaisieNeural` | Female | Friendly, Positive |
-| `en-GB-RyanNeural` | Male | Friendly, Positive |
-| `en-GB-SoniaNeural` | Female | Friendly, Positive |
-| `en-GB-ThomasNeural` | Male | Friendly, Positive |
+| `en-GB-RyanNeural`   | Male   | Friendly, Positive |
+| `en-GB-SoniaNeural`  | Female | Friendly, Positive |
+| `en-GB-ThomasNeural` | Male   | Friendly, Positive |
 
 **en-HK - English (Hong Kong SAR)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-HK-SamNeural` | Male | Friendly, Positive |
+| Voice             | Gender | Personality        |
+| ----------------- | ------ | ------------------ |
+| `en-HK-SamNeural` | Male   | Friendly, Positive |
 | `en-HK-YanNeural` | Female | Friendly, Positive |
 
 **en-IE - English (Ireland)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-IE-ConnorNeural` | Male | Friendly, Positive |
-| `en-IE-EmilyNeural` | Female | Friendly, Positive |
+| Voice                | Gender | Personality        |
+| -------------------- | ------ | ------------------ |
+| `en-IE-ConnorNeural` | Male   | Friendly, Positive |
+| `en-IE-EmilyNeural`  | Female | Friendly, Positive |
 
 **en-IN - English (India)**
 
-| Voice | Gender | Personality |
-|---|---|---|
+| Voice                          | Gender | Personality        |
+| ------------------------------ | ------ | ------------------ |
 | `en-IN-NeerjaExpressiveNeural` | Female | Friendly, Positive |
-| `en-IN-NeerjaNeural` | Female | Friendly, Positive |
-| `en-IN-PrabhatNeural` | Male | Friendly, Positive |
+| `en-IN-NeerjaNeural`           | Female | Friendly, Positive |
+| `en-IN-PrabhatNeural`          | Male   | Friendly, Positive |
 
 **en-KE - English (Kenya)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-KE-AsiliaNeural` | Female | Friendly, Positive |
-| `en-KE-ChilembaNeural` | Male | Friendly, Positive |
+| Voice                  | Gender | Personality        |
+| ---------------------- | ------ | ------------------ |
+| `en-KE-AsiliaNeural`   | Female | Friendly, Positive |
+| `en-KE-ChilembaNeural` | Male   | Friendly, Positive |
 
 **en-NG - English (Nigeria)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-NG-AbeoNeural` | Male | Friendly, Positive |
+| Voice                | Gender | Personality        |
+| -------------------- | ------ | ------------------ |
+| `en-NG-AbeoNeural`   | Male   | Friendly, Positive |
 | `en-NG-EzinneNeural` | Female | Friendly, Positive |
 
 **en-NZ - English (New Zealand)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-NZ-MitchellNeural` | Male | Friendly, Positive |
-| `en-NZ-MollyNeural` | Female | Friendly, Positive |
+| Voice                  | Gender | Personality        |
+| ---------------------- | ------ | ------------------ |
+| `en-NZ-MitchellNeural` | Male   | Friendly, Positive |
+| `en-NZ-MollyNeural`    | Female | Friendly, Positive |
 
 **en-PH - English (Philippines)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-PH-JamesNeural` | Male | Friendly, Positive |
-| `en-PH-RosaNeural` | Female | Friendly, Positive |
+| Voice               | Gender | Personality        |
+| ------------------- | ------ | ------------------ |
+| `en-PH-JamesNeural` | Male   | Friendly, Positive |
+| `en-PH-RosaNeural`  | Female | Friendly, Positive |
 
 **en-SG - English (Singapore)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-SG-LunaNeural` | Female | Friendly, Positive |
-| `en-SG-WayneNeural` | Male | Friendly, Positive |
+| Voice               | Gender | Personality        |
+| ------------------- | ------ | ------------------ |
+| `en-SG-LunaNeural`  | Female | Friendly, Positive |
+| `en-SG-WayneNeural` | Male   | Friendly, Positive |
 
 **en-TZ - English (Tanzania)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-TZ-ElimuNeural` | Male | Friendly, Positive |
+| Voice               | Gender | Personality        |
+| ------------------- | ------ | ------------------ |
+| `en-TZ-ElimuNeural` | Male   | Friendly, Positive |
 | `en-TZ-ImaniNeural` | Female | Friendly, Positive |
 
 **en-US - English (United States)**
 
-| Voice | Gender | Personality |
-|---|---|---|
-| `en-US-AnaNeural` | Female | Cute |
-| `en-US-AndrewMultilingualNeural` | Male | Warm, Confident, Authentic, Honest |
-| `en-US-AndrewNeural` | Male | Warm, Confident, Authentic, Honest |
-| `en-US-AriaNeural` | Female | Positive, Confident |
-| `en-US-AvaMultilingualNeural` | Female | Expressive, Caring, Pleasant, Friendly |
-| `en-US-AvaNeural` | Female | Expressive, Caring, Pleasant, Friendly |
-| `en-US-BrianMultilingualNeural` | Male | Approachable, Casual, Sincere |
-| `en-US-BrianNeural` | Male | Approachable, Casual, Sincere |
-| `en-US-ChristopherNeural` | Male | Reliable, Authority |
-| `en-US-EmmaMultilingualNeural` | Female | Cheerful, Clear, Conversational |
-| `en-US-EmmaNeural` | Female | Cheerful, Clear, Conversational |
-| `en-US-EricNeural` | Male | Rational |
-| `en-US-GuyNeural` | Male | Passion |
-| `en-US-JennyNeural` | Female | Friendly, Considerate, Comfort |
-| `en-US-MichelleNeural` | Female | Friendly, Pleasant |
-| `en-US-RogerNeural` | Male | Lively |
-| `en-US-SteffanNeural` | Male | Rational |
+| Voice                            | Gender | Personality                            |
+| -------------------------------- | ------ | -------------------------------------- |
+| `en-US-AnaNeural`                | Female | Cute                                   |
+| `en-US-AndrewMultilingualNeural` | Male   | Warm, Confident, Authentic, Honest     |
+| `en-US-AndrewNeural`             | Male   | Warm, Confident, Authentic, Honest     |
+| `en-US-AriaNeural`               | Female | Positive, Confident                    |
+| `en-US-AvaMultilingualNeural`    | Female | Expressive, Caring, Pleasant, Friendly |
+| `en-US-AvaNeural`                | Female | Expressive, Caring, Pleasant, Friendly |
+| `en-US-BrianMultilingualNeural`  | Male   | Approachable, Casual, Sincere          |
+| `en-US-BrianNeural`              | Male   | Approachable, Casual, Sincere          |
+| `en-US-ChristopherNeural`        | Male   | Reliable, Authority                    |
+| `en-US-EmmaMultilingualNeural`   | Female | Cheerful, Clear, Conversational        |
+| `en-US-EmmaNeural`               | Female | Cheerful, Clear, Conversational        |
+| `en-US-EricNeural`               | Male   | Rational                               |
+| `en-US-GuyNeural`                | Male   | Passion                                |
+| `en-US-JennyNeural`              | Female | Friendly, Considerate, Comfort         |
+| `en-US-MichelleNeural`           | Female | Friendly, Pleasant                     |
+| `en-US-RogerNeural`              | Male   | Lively                                 |
+| `en-US-SteffanNeural`            | Male   | Rational                               |
 
 **en-ZA - English (South Africa)**
 
-| Voice | Gender | Personality |
-|---|---|---|
+| Voice              | Gender | Personality        |
+| ------------------ | ------ | ------------------ |
 | `en-ZA-LeahNeural` | Female | Friendly, Positive |
-| `en-ZA-LukeNeural` | Male | Friendly, Positive |
-
-</details>
+| `en-ZA-LukeNeural` | Male   | Friendly, Positive |
 
 ### Switching between `windows-tts` and `edge-tts`
 
@@ -443,17 +446,16 @@ A single `command`-type `Stop` hook, in PowerShell, that:
 ### Verifying it after any edit
 
 1. **Syntax check:**
-   ```powershell
+  ```powershell
    Get-Content -Raw "$env:USERPROFILE\.claude\settings.json" | ConvertFrom-Json | Out-Null
-   ```
+  ```
    Throws on malformed JSON.
-
 2. **Pipe-test against a real transcript** (find the latest one under `~/.claude/projects/<encoded-cwd>/*.jsonl`):
-   ```powershell
+  ```powershell
    $cmd = (Get-Content -Raw "$env:USERPROFILE\.claude\settings.json" | ConvertFrom-Json).hooks.Stop[0].hooks[0].command
    $payload = @{ transcript_path = "C:\path\to\session.jsonl" } | ConvertTo-Json -Compress
    $payload | pwsh -NoProfile -NonInteractive -Command $cmd
-   ```
+  ```
    Should speak the last assistant message from that transcript out loud.
 
 ### Modifying it
@@ -477,9 +479,9 @@ To turn it off again in the future (or on another machine), either:
   1. Open `~/.claude/settings.json` (`C:\Users\<you>\.claude\settings.json`) in an editor.
   2. Delete the entire `"hooks": { "Stop": [ ... ] }` block (the `hooks` key and everything inside it, unless you have other hooks configured elsewhere in the file — in that case delete only the `Stop` entry from the `hooks` object, or just the one object inside `hooks.Stop[0].hooks` that has `"statusMessage": "Speaking response..."`).
   3. Validate the JSON is still well-formed:
-     ```powershell
+    ```powershell
      Get-Content -Raw "$env:USERPROFILE\.claude\settings.json" | ConvertFrom-Json | Out-Null
-     ```
+    ```
      No output/error = valid.
   4. Run `/hooks` in Claude Code (or start a new session) to force the change to take effect immediately.
 
